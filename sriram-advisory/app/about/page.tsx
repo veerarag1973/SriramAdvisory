@@ -47,34 +47,34 @@ const values = [
 
 const milestones = [
   {
+    year: "1998–2005",
+    event: "Enterprise Software Developer",
+    detail: "Built banking software for a leading international bank at Polaris Software Lab, working with C++, Visual C++, and Java — developing a deep foundation in enterprise systems and financial technology.",
+  },
+  {
     year: "2005–2015",
-    event: "Finance & Risk Management",
-    detail: "Built expertise in financial controls, audit, and regulatory compliance across large organisations.",
+    event: "Project Manager, Wipro",
+    detail: "Managed multi-million dollar development and support programmes across Retail, Manufacturing, and BFSI verticals. Gained hands-on expertise in large-scale delivery, stakeholder management, and complex technology programmes.",
   },
   {
-    year: "2010–2018",
-    event: "Regulatory Compliance",
-    detail: "Led compliance programs across SOX, GDPR, and PCI DSS frameworks — developing deep expertise in complex system change.",
+    year: "2013–2017",
+    event: "Practice & Presales Leadership, Wipro",
+    detail: "Led practice delivery and growth in portal and content management, then moved into presales — managing RFPs and RFIs across multiple industry verticals and building commercial and solutioning skills.",
   },
   {
-    year: "2018–2022",
-    event: "Business Transformation",
-    detail: "Shifted focus to enterprise transformation projects, where technology change meets people change.",
+    year: "2018–2020",
+    event: "Entrepreneur — Anusham Foods",
+    detail: "Stepped away from corporate life to bootstrap an ecommerce venture in food products retail. Successfully ran the business for 2.5 years, developing firsthand experience in building and operating a small enterprise from scratch.",
   },
   {
-    year: "2022–2023",
-    event: "AI Strategy Work Begins",
-    detail: "Began advising organisations on how AI would reshape their workforce and operating models.",
-  },
-  {
-    year: "2024",
-    event: "Sriram Advisory Launched",
-    detail: "Formalised the advisory practice with two newsletters, 1:1 sessions, and workshops for individuals and organisations.",
+    year: "2021–2025",
+    event: "Capital Markets Programme Leader, Wipro",
+    detail: "Returned to Wipro as Programme Manager then Delivery Manager for multi-million dollar Capital Markets programmes in the USA. Led enterprise delivery and operations across global teams, partnering with customer leadership to deliver business value.",
   },
   {
     year: "2025–Present",
-    event: "Growing Community",
-    detail: "5,000+ newsletter readers across HumanXAI Briefing and AI for Everyone, serving professionals across 12 industries.",
+    event: "AI Champion & Enterprise AI Architect",
+    detail: "Appointed AI Champion at Wipro — architecting technical upskilling paths for 800+ engineers across LLM fundamentals, RAG patterns, and prompt engineering. Simultaneously launching Sriram Advisory and building getspanforge.com, open-source observability tooling for agentic AI.",
   },
 ];
 

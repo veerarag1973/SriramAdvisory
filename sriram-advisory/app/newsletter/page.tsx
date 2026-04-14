@@ -9,7 +9,7 @@ export default function NewsletterPage() {
       <section className="bg-navy text-cream py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="text-amber text-xs font-semibold uppercase tracking-wider mb-4">
-            Two Free Newsletters
+            Free Weekly Newsletter
           </div>
           <h1 className="font-serif text-4xl sm:text-5xl font-bold mb-6">
             Weekly Clarity in a Fast-Moving World
@@ -19,52 +19,17 @@ export default function NewsletterPage() {
             insights on what AI actually means for your career — delivered
             weekly to your inbox.
           </p>
-          <p className="text-amber text-sm mt-4">Join 5,000+ readers across 12 industries</p>
         </div>
       </section>
 
       {/* Two newsletters */}
       <section className="bg-cream py-20">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            {/* HumanXAI */}
-            <div className="bg-navy text-cream rounded-3xl p-10 flex flex-col gap-5">
-              <div className="inline-flex items-center gap-2 bg-amber/10 text-amber text-xs font-semibold px-4 py-1.5 rounded-full self-start">
-                For Professionals
-              </div>
-              <h2 className="font-serif text-3xl font-bold">HumanXAI Briefing</h2>
-              <p className="text-cream/70">
-                For business leaders, mid-career professionals, and executives
-                who want to stay ahead of how AI is reshaping their industry —
-                without the noise.
-              </p>
-              <ul className="text-cream/70 space-y-2 text-sm">
-                <li>→ Deep dives on AI&rsquo;s impact on specific sectors</li>
-                <li>→ Strategic frameworks for career repositioning</li>
-                <li>→ Real analysis, no LinkedIn hype</li>
-                <li>→ Weekly · Free forever</li>
-              </ul>
-
-              <form className="mt-auto space-y-3" onSubmit={(e) => e.preventDefault()}>
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  required
-                  className="w-full bg-navy-light border border-white/20 text-cream placeholder:text-cream/40 rounded-full px-5 py-3 text-sm focus:outline-none focus:border-amber"
-                />
-                <button
-                  type="submit"
-                  className="w-full bg-amber text-navy font-semibold py-3 rounded-full hover:bg-amber-light transition-colors text-sm"
-                >
-                  Subscribe to HumanXAI Briefing →
-                </button>
-              </form>
-            </div>
-
+          <div className="grid grid-cols-1 gap-10 max-w-xl mx-auto">
             {/* AI for Everyone */}
             <div className="bg-amber text-navy rounded-3xl p-10 flex flex-col gap-5">
               <div className="inline-flex items-center gap-2 bg-navy/10 text-navy text-xs font-semibold px-4 py-1.5 rounded-full self-start">
-                For Students
+                For Everyone
               </div>
               <h2 className="font-serif text-3xl font-bold">AI for Everyone</h2>
               <p className="text-navy/80">
@@ -96,8 +61,7 @@ export default function NewsletterPage() {
           </div>
 
           <p className="text-center text-slate text-sm mt-8">
-            You can subscribe to both. Unsubscribe anytime. We never sell or
-            share your email.
+            Unsubscribe anytime. We never sell or share your email.
           </p>
         </div>
       </section>

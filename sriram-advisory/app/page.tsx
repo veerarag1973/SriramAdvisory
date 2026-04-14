@@ -139,8 +139,6 @@ export default function HomePage() {
               </Link>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-cream/50">
-              <span>⭐ Read by 5,000+ professionals</span>
-              <span>🌐 Across 12 industries</span>
               <span>🏆 Finance &amp; AI Strategy expertise</span>
             </div>
           </div>
@@ -300,41 +298,27 @@ export default function HomePage() {
       <section className="bg-navy text-cream py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-amber/10 text-amber text-xs font-semibold px-4 py-1.5 rounded-full mb-6 tracking-wide uppercase">
-            ✦ Two Free Newsletters
+            ✦ Free Newsletter
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold mb-5">
             Stay Ahead of the Curve — Not Behind It
           </h2>
           <p className="text-cream/70 text-lg mb-12 leading-relaxed">
-            Two free newsletters. One for executives and professionals, one for
-            everyone else. Practical AI insights delivered weekly — no jargon,
-            no hype, just what matters for your career.
+            A free weekly newsletter for students and professionals who want to
+            understand AI without the jargon — and know what it means for their
+            career.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            <div className="bg-navy-light border border-white/10 rounded-2xl p-7 text-left">
-              <div className="font-serif text-xl font-bold text-amber mb-2">
-                HumanXAI Briefing
-              </div>
-              <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">
-                For business leaders &amp; mid-career professionals
-              </p>
-              <p className="text-cream/70 text-sm leading-relaxed">
-                Deep dives on AI&rsquo;s impact on work, strategy, and careers.
-                Real analysis, no hype. Weekly.
-              </p>
+          <div className="max-w-sm mx-auto bg-navy-light border border-white/10 rounded-2xl p-7 text-left mb-10">
+            <div className="font-serif text-xl font-bold text-amber mb-2">
+              AI for Everyone
             </div>
-            <div className="bg-navy-light border border-white/10 rounded-2xl p-7 text-left">
-              <div className="font-serif text-xl font-bold text-amber mb-2">
-                AI for Everyone
-              </div>
-              <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">
-                For students &amp; early-career professionals
-              </p>
-              <p className="text-cream/70 text-sm leading-relaxed">
-                Plain-English AI explainers, career tips, tool spotlights, and
-                what it all means for your future. Weekly.
-              </p>
-            </div>
+            <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">
+              For everyone
+            </p>
+            <p className="text-cream/70 text-sm leading-relaxed">
+              Plain-English AI explainers, career tips, tool spotlights, and
+              what it all means for your future. Weekly.
+            </p>
           </div>
           <Link
             href="/newsletter"
@@ -343,7 +327,7 @@ export default function HomePage() {
             Subscribe Free →
           </Link>
           <p className="text-cream/40 text-sm mt-4">
-            Join 5,000+ readers · Unsubscribe anytime
+            Unsubscribe anytime
           </p>
         </div>
       </section>
@@ -387,10 +371,9 @@ export default function HomePage() {
               <div className="flex flex-wrap gap-2 mb-8">
                 {[
                   "Finance Background",
-                  "SOX · GDPR · PCI DSS",
                   "AI Strategy",
-                  "2 Newsletters",
-                  "5K+ LinkedIn",
+                  "AI for Everyone Newsletter",
+                  "25+ Years Enterprise Tech",
                 ].map((c) => (
                   <span
                     key={c}
