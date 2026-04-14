@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const stats = [
   {
@@ -352,20 +353,14 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
             <div className="flex justify-center lg:justify-end order-2 lg:order-1">
-              <div className="w-72 h-80 bg-navy-light rounded-3xl flex flex-col items-center justify-center gap-4 border border-amber/20 relative overflow-hidden">
-                <div
-                  className="absolute inset-0 opacity-5"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle, #C4862A 1px, transparent 1px)",
-                    backgroundSize: "20px 20px",
-                  }}
+              <div className="w-72 h-80 rounded-3xl overflow-hidden border border-amber/20 relative shadow-xl">
+                <Image
+                  src="/sriram.png"
+                  alt="Sriram — AI Strategist & Career Advisor"
+                  fill
+                  className="object-cover object-top"
+                  priority
                 />
-                <div className="text-7xl relative z-10">👤</div>
-                <p className="text-cream/60 text-sm relative z-10">Sriram</p>
-                <p className="text-amber text-xs font-medium relative z-10">
-                  AI Strategist &amp; Advisor
-                </p>
               </div>
             </div>
             <div className="order-1 lg:order-2">

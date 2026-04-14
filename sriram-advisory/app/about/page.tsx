@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -105,10 +106,13 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
             <div className="lg:col-span-1 flex justify-center">
-              <div className="w-56 h-64 bg-navy-light rounded-3xl flex flex-col items-center justify-center gap-3 border border-amber/20">
-                <div className="text-6xl">👤</div>
-                <p className="text-cream/60 text-sm">Sriram</p>
-                <p className="text-amber text-xs font-medium">AI Strategist</p>
+              <div className="w-56 h-64 rounded-3xl overflow-hidden border border-amber/20 relative shadow-xl">
+                <Image
+                  src="/sriram.png"
+                  alt="Sriram — AI Strategist & Career Advisor"
+                  fill
+                  className="object-cover object-top"
+                />
               </div>
             </div>
             <div className="lg:col-span-2">
