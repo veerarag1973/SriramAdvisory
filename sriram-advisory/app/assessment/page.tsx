@@ -1,361 +1,495 @@
-"use client";
+'use client';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 
-import { useState } from "react";
-import Link from "next/link";
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-const questions = [
-  {
-    id: 1,
-    category: "Your Background",
-    question: "What best describes your current situation?",
-    options: [
-      { label: "Student / Recent Graduate", value: "student" },
-      { label: "Mid-Career Professional (5–15 years)", value: "mid" },
-      { label: "Senior Professional (15+ years)", value: "senior" },
-      { label: "Career Changer / Between Roles", value: "changer" },
-    ],
-  },
-  {
-    id: 2,
-    category: "Your Field",
-    question: "Which industry do you work in (or plan to enter)?",
-    options: [
-      { label: "Finance / Accounting / Banking", value: "finance" },
-      { label: "Technology / Engineering", value: "tech" },
-      { label: "Marketing / Communications", value: "marketing" },
-      { label: "Law / Compliance / HR", value: "legal" },
-      { label: "Healthcare / Education", value: "healthcare" },
-      { label: "Other / Not sure yet", value: "other" },
-    ],
-  },
-  {
-    id: 3,
-    category: "AI Exposure",
-    question: "How much of your daily work involves tasks that AI can currently automate?",
-    options: [
-      { label: "Most of it — repetitive, rule-based work", value: "high" },
-      { label: "Some of it — a mix of routine and complex tasks", value: "medium" },
-      { label: "Very little — highly judgement-based or creative", value: "low" },
-      { label: "I'm not sure", value: "unsure" },
-    ],
-  },
-  {
-    id: 4,
-    category: "Current AI Usage",
-    question: "How much are you currently using AI tools in your work or studies?",
-    options: [
-      { label: "Regularly — it's part of my workflow", value: "regular" },
-      { label: "Occasionally — experimenting now and then", value: "occasional" },
-      { label: "Rarely or never", value: "rare" },
-      { label: "My organisation doesn't allow it (yet)", value: "restricted" },
-    ],
-  },
-  {
-    id: 5,
-    category: "Your Goals",
-    question: "What matters most to you right now?",
-    options: [
-      { label: "Job security — I want to make sure I stay employed", value: "security" },
-      { label: "Growth — I want to advance or take on new roles", value: "growth" },
-      { label: "Pivot — I'm considering a career change", value: "pivot" },
-      { label: "Clarity — I just want to understand what's happening", value: "clarity" },
-    ],
-  },
-];
-
-type ScoreProfile = {
-  exposure: "Low" | "Medium" | "High" | "Transformative";
-  resilience: "Strong" | "Developing" | "At Risk";
-  actions: string[];
-  service: string;
-  serviceLink: string;
-};
-
-function scoreAnswers(answers: Record<number, string>): ScoreProfile {
-  const exposureMap: Record<string, number> = {
-    high: 3, medium: 2, low: 1, unsure: 2,
-    finance: 2, tech: 2, marketing: 2, legal: 1, healthcare: 1, other: 2,
-  };
-  const resMap: Record<string, number> = {
-    regular: 3, occasional: 2, rare: 1, restricted: 1,
-    student: 2, mid: 2, senior: 3, changer: 1,
-  };
-
-  let expScore = (exposureMap[answers[3]] || 2) + (exposureMap[answers[2]] || 2);
-  let resScore = (resMap[answers[1]] || 2) + (resMap[answers[4]] || 2);
-
-  const exposure: ScoreProfile["exposure"] =
-    expScore >= 5 ? "Transformative" : expScore >= 4 ? "High" : expScore >= 3 ? "Medium" : "Low";
-
-  const resilience: ScoreProfile["resilience"] =
-    resScore >= 5 ? "Strong" : resScore >= 3 ? "Developing" : "At Risk";
-
-  const goal = answers[5] || "clarity";
-  const actions =
-    goal === "security"
-      ? [
-          "Map exactly which tasks in your role are automatable — specificity reduces fear",
-          "Identify 2–3 'AI-adjacent' skills to build in the next 90 days",
-          "Have an honest conversation with your manager about the organisation's AI direction",
-        ]
-      : goal === "growth"
-      ? [
-          "Identify the emerging roles in your field that combine your domain expertise with AI literacy",
-          "Build a visible track record of AI-enabled work — even small wins",
-          "Find a community of early adopters in your industry to accelerate your learning",
-        ]
-      : goal === "pivot"
-      ? [
-          "Audit your transferable skills — they're more portable than you think",
-          "Research which adjacent fields value your background + AI literacy combination",
-          "Start one small experiment in your target area before committing to a full switch",
-        ]
-      : [
-          "Read one well-sourced analysis of AI's impact on your specific industry",
-          "Try one AI tool relevant to your work for 30 days",
-          "Take a structured course on AI literacy (not coding — literacy)",
-        ];
-
-  const serviceLink =
-    answers[1] === "student" ? "/resources" : "/services/career-advisory";
-  const service =
-    answers[1] === "student"
-      ? "Browse Student Resources"
-      : "Book a 1:1 Career Clarity Session";
-
-  return { exposure, resilience, actions, service, serviceLink };
+interface FormData {
+  plan: string;
+  // Section A
+  full_name: string; role_title: string; company: string; industry: string;
+  role_category: string; years_experience: string; company_type: string;
+  core_responsibilities: string; location: string;
+  // Scores
+  d1_q1: number; d1_q2: number; d1_q3: number;
+  d1_evidence: string; d1_calibration: string;
+  d2_q1: number; d2_q2: number; d2_q3: number;
+  d2_evidence: string; d2_calibration: string;
+  d3_q1: number; d3_q2: number; d3_q3: number;
+  d3_evidence: string; d3_calibration: string;
+  d4_q1: number; d4_q2: number; d4_q3: number;
+  d4_evidence: string; d4_calibration: string;
+  d5_q1: number; d5_q2: number; d5_q3: number;
+  d5_evidence: string; d5_calibration: string;
 }
 
-export default function AssessmentPage() {
-  const [started, setStarted] = useState(false);
-  const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [result, setResult] = useState<ScoreProfile | null>(null);
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+const EMPTY: FormData = {
+  plan: '',
+  full_name: '', role_title: '', company: '', industry: '',
+  role_category: '', years_experience: '', company_type: '',
+  core_responsibilities: '', location: '',
+  d1_q1: 0, d1_q2: 0, d1_q3: 0, d1_evidence: '', d1_calibration: '',
+  d2_q1: 0, d2_q2: 0, d2_q3: 0, d2_evidence: '', d2_calibration: '',
+  d3_q1: 0, d3_q2: 0, d3_q3: 0, d3_evidence: '', d3_calibration: '',
+  d4_q1: 0, d4_q2: 0, d4_q3: 0, d4_evidence: '', d4_calibration: '',
+  d5_q1: 0, d5_q2: 0, d5_q3: 0, d5_evidence: '', d5_calibration: '',
+};
 
-  function handleAnswer(value: string) {
-    const q = questions[current];
-    const newAnswers = { ...answers, [q.id]: value };
-    setAnswers(newAnswers);
-    if (current < questions.length - 1) {
-      setCurrent(current + 1);
-    } else {
-      setResult(scoreAnswers(newAnswers));
+const ROLE_CATEGORIES = ['Tech','Finance','Operations','Creative','Sales','HR','Legal','Other'];
+const COMPANY_TYPES   = ['Startup','SME','Enterprise','Freelance','Government'];
+const EXP_OPTIONS     = ['< 1 year','1–3 years','3–5 years','5–10 years','10–15 years','15+ years'];
+
+const TOTAL_STEPS = 8; // 0=intro, 1=aboutYou, 2-6=dimensions, 7=done
+
+// ─── Score selector (1-10 buttons) ──────────────────────────────────────────
+
+function ScoreSelector({ value, onChange, anchor }: {
+  value: number; onChange: (v: number) => void; anchor: string;
+}) {
+  return (
+    <div>
+      <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginBottom:8 }}>
+        {Array.from({length:10},(_,i)=>i+1).map(n => (
+          <button key={n} type="button" onClick={()=>onChange(n)} style={{
+            width:40, height:40, borderRadius:8, border:'none', cursor:'pointer',
+            fontFamily:'var(--font-dm-sans),sans-serif', fontWeight:700, fontSize:14,
+            background: value === n ? '#1B2D52' : value > 0 && n <= value ? '#E8EDF8' : '#F0F2F7',
+            color: value === n ? '#fff' : '#46567A',
+            transition:'all 0.12s',
+            outline: value === n ? '2px solid #2D5BE3' : 'none',
+            outlineOffset:2,
+          }}>{n}</button>
+        ))}
+      </div>
+      <div style={{ fontSize:12, color:'#7080A0', lineHeight:1.5 }}>{anchor}</div>
+    </div>
+  );
+}
+
+// ─── Text / Textarea helpers ─────────────────────────────────────────────────
+
+const inputStyle: React.CSSProperties = {
+  width:'100%', padding:'10px 14px', borderRadius:8,
+  border:'1.5px solid #D4D9E8', fontSize:14, color:'#1B2D52',
+  fontFamily:'var(--font-dm-sans),sans-serif', background:'#fff',
+  outline:'none', boxSizing:'border-box',
+};
+const taStyle: React.CSSProperties = { ...inputStyle, minHeight:80, resize:'vertical' };
+const labelStyle: React.CSSProperties = {
+  display:'block', fontSize:13, fontWeight:600, color:'#1B2D52', marginBottom:6,
+};
+const hintStyle: React.CSSProperties = {
+  fontSize:12, color:'#7080A0', fontStyle:'italic', marginTop:4,
+};
+
+// ─── Main component (inner, uses useSearchParams) ────────────────────────────
+
+function AssessmentInner() {
+  const sp = useSearchParams();
+  const router = useRouter();
+  const [step, setStep] = useState(0);
+  const [fd, setFd] = useState<FormData>({ ...EMPTY, plan: sp.get('plan') ?? 'free' });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitId, setSubmitId] = useState('');
+  const [error, setError] = useState('');
+
+  const set = (k: keyof FormData, v: string | number) =>
+    setFd(prev => ({ ...prev, [k]: v }));
+
+  // Validation per step
+  function canProceed(): boolean {
+    if (step === 1) {
+      return !!(fd.full_name && fd.role_title && fd.company && fd.industry &&
+                fd.role_category && fd.years_experience && fd.company_type);
+    }
+    if (step === 2) return fd.d1_q1 > 0 && fd.d1_q2 > 0 && fd.d1_q3 > 0;
+    if (step === 3) return fd.d2_q1 > 0 && fd.d2_q2 > 0 && fd.d2_q3 > 0;
+    if (step === 4) return fd.d3_q1 > 0 && fd.d3_q2 > 0 && fd.d3_q3 > 0;
+    if (step === 5) return fd.d4_q1 > 0 && fd.d4_q2 > 0 && fd.d4_q3 > 0;
+    if (step === 6) return fd.d5_q1 > 0 && fd.d5_q2 > 0 && fd.d5_q3 > 0;
+    return true;
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    setError('');
+    try {
+      const r = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fd),
+      });
+      const data = await r.json();
+      if (data.ok) { setSubmitId(data.id); setStep(7); }
+      else setError('Something went wrong. Please try again.');
+    } catch {
+      setError('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   }
 
-  if (!started) {
-    return (
-      <>
-        <section className="bg-navy text-cream py-24">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="text-amber text-xs font-semibold uppercase tracking-wider mb-4">
-              Free Tool
-            </div>
-            <h1 className="font-serif text-4xl sm:text-5xl font-bold mb-6">
-              AI Career Readiness Assessment
-            </h1>
-            <p className="text-cream/70 text-xl leading-relaxed max-w-2xl mx-auto mb-10">
-              5 questions. 5 minutes. A personalised snapshot of your AI
-              exposure, resilience, and the 3 moves you should make next.
-            </p>
-            <div className="grid grid-cols-3 gap-6 mb-12">
-              {[
-                { icon: "🎯", label: "AI Exposure Score" },
-                { icon: "🛡️", label: "Resilience Index" },
-                { icon: "🗺️", label: "Top 3 Actions" },
-              ].map((item) => (
-                <div key={item.label} className="bg-navy-light border border-white/10 rounded-2xl p-5">
-                  <div className="text-3xl mb-2">{item.icon}</div>
-                  <p className="text-cream/70 text-sm">{item.label}</p>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setStarted(true)}
-              className="bg-amber text-navy font-semibold px-10 py-4 rounded-full hover:bg-amber-light transition-colors text-base"
-            >
-              Start the Free Assessment →
-            </button>
-            <p className="text-cream/40 text-sm mt-4">Free · No email required to see results</p>
-          </div>
-        </section>
-      </>
-    );
-  }
+  const planLabel = fd.plan === 'free' ? 'Free Report' : fd.plan === 'report' ? 'Full Report (₹499)' : 'Advisory (₹2,499)';
+  const progress = step === 0 ? 0 : step === 7 ? 100 : Math.round((step / 6) * 100);
 
-  if (result) {
-    const exposureColor =
-      result.exposure === "Low" ? "text-green-400" :
-      result.exposure === "Medium" ? "text-amber" :
-      result.exposure === "High" ? "text-orange-400" : "text-red-400";
-
-    const resColor =
-      result.resilience === "Strong" ? "text-green-400" :
-      result.resilience === "Developing" ? "text-amber" : "text-red-400";
-
-    return (
-      <section className="bg-cream min-h-screen py-20">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <div className="text-amber text-xs font-semibold uppercase tracking-wider mb-3">
-              Your Results
-            </div>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-navy">
-              Here&rsquo;s Where You Stand
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-2 gap-6 mb-10">
-            <div className="bg-navy text-cream rounded-2xl p-7 text-center">
-              <p className="text-cream/60 text-xs uppercase tracking-wider mb-3">AI Exposure</p>
-              <div className={`font-serif text-3xl font-bold mb-2 ${exposureColor}`}>
-                {result.exposure}
-              </div>
-              <p className="text-cream/70 text-xs">
-                {result.exposure === "Low" && "Your role has relatively low AI displacement risk."}
-                {result.exposure === "Medium" && "Some parts of your role face meaningful AI pressure."}
-                {result.exposure === "High" && "AI will significantly reshape your current role."}
-                {result.exposure === "Transformative" && "Your role is being fundamentally transformed by AI."}
-              </p>
-            </div>
-            <div className="bg-amber text-navy rounded-2xl p-7 text-center">
-              <p className="text-navy/60 text-xs uppercase tracking-wider mb-3">Resilience Index</p>
-              <div className={`font-serif text-3xl font-bold mb-2 ${resColor}`}>
-                {result.resilience}
-              </div>
-              <p className="text-navy/70 text-xs">
-                {result.resilience === "Strong" && "You have the foundation to navigate this shift well."}
-                {result.resilience === "Developing" && "You have potential — focused effort will make the difference."}
-                {result.resilience === "At Risk" && "Now is the right time to start building AI resilience."}
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-cream-dark rounded-2xl p-8 border border-slate/10 mb-8">
-            <h3 className="font-serif text-xl font-bold text-navy mb-5">
-              Your Top 3 Recommended Actions
-            </h3>
-            <div className="space-y-4">
-              {result.actions.map((action, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="w-7 h-7 rounded-full bg-amber text-navy text-sm font-bold flex items-center justify-center flex-shrink-0">
-                    {i + 1}
-                  </div>
-                  <p className="text-slate text-sm leading-relaxed pt-1">{action}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {!submitted ? (
-            <div className="bg-navy text-cream rounded-2xl p-8 mb-8">
-              <h3 className="font-serif text-xl font-bold mb-2">
-                Get Your Full Report by Email
-              </h3>
-              <p className="text-cream/60 text-sm mb-5">
-                Including a personalised resource list and a deeper breakdown
-                of your results. No spam, ever.
-              </p>
-              <form
-                className="flex gap-3"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (email) setSubmitted(true);
-                }}
-              >
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  className="flex-1 bg-navy-light border border-white/20 text-cream placeholder:text-cream/40 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-amber"
-                />
-                <button
-                  type="submit"
-                  className="bg-amber text-navy font-semibold px-6 py-2.5 rounded-full hover:bg-amber-light transition-colors text-sm whitespace-nowrap"
-                >
-                  Email Me →
-                </button>
-              </form>
-            </div>
-          ) : (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-8 mb-8 text-center">
-              <div className="text-4xl mb-3">✅</div>
-              <h3 className="font-serif text-xl font-bold text-navy mb-2">Report on its way!</h3>
-              <p className="text-slate text-sm">
-                Check your inbox at {email}. We&rsquo;ll also send you a weekly newsletter (unsubscribe anytime).
-              </p>
-            </div>
-          )}
-
-          <div className="bg-amber rounded-2xl p-8 text-center">
-            <h3 className="font-serif text-xl font-bold text-navy mb-3">
-              Ready to go deeper?
-            </h3>
-            <p className="text-navy/80 text-sm mb-5">
-              Your results suggest that a focused 1:1 session could significantly
-              accelerate your next steps.
-            </p>
-            <Link
-              href={result.serviceLink}
-              className="bg-navy text-cream font-semibold px-7 py-3 rounded-full hover:bg-navy-light transition-colors text-sm"
-            >
-              {result.service} →
-            </Link>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  const q = questions[current];
-  const progress = ((current) / questions.length) * 100;
+  // ─── LAYOUT ───────────────────────────────────────────────────────────────
 
   return (
-    <section className="bg-cream min-h-screen py-20">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Progress */}
-        <div className="mb-10">
-          <div className="flex justify-between text-sm text-slate mb-2">
-            <span>{q.category}</span>
-            <span>{current + 1} of {questions.length}</span>
-          </div>
-          <div className="h-1.5 bg-slate/10 rounded-full">
-            <div
-              className="h-1.5 bg-amber rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+    <div style={{ minHeight:'100vh', background:'#F7F8FC', fontFamily:'var(--font-dm-sans),sans-serif' }}>
+
+      {/* Top bar */}
+      <div style={{ background:'#1B2D52', padding:'14px 32px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <a href="/" style={{ fontFamily:'var(--font-playfair),Georgia,serif', fontSize:18, fontWeight:700, color:'#fff', textDecoration:'none' }}>
+          Sriram Advisory
+        </a>
+        <div style={{ fontSize:13, color:'rgba(255,255,255,0.55)' }}>SA-AIRS™ Assessment</div>
+      </div>
+
+      {/* Progress bar */}
+      {step > 0 && step < 7 && (
+        <div style={{ height:4, background:'#E0E5F0' }}>
+          <div style={{ height:'100%', width:`${progress}%`, background:'#2D5BE3', transition:'width 0.4s ease' }} />
         </div>
+      )}
 
-        <h2 className="font-serif text-2xl sm:text-3xl font-bold text-navy mb-8">
-          {q.question}
-        </h2>
+      <div style={{ maxWidth:680, margin:'0 auto', padding:'48px 24px' }}>
 
-        <div className="space-y-3">
-          {q.options.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => handleAnswer(opt.value)}
-              className="w-full text-left border-2 border-slate/20 rounded-xl px-6 py-4 text-navy hover:border-amber hover:bg-amber/5 transition-all font-medium text-sm"
-            >
-              {opt.label}
+        {/* ── STEP 0: INTRO ─────────────────────────────────────────────── */}
+        {step === 0 && (
+          <div>
+            <div style={{ fontSize:12, fontWeight:700, letterSpacing:'0.1em', color:'#2D5BE3', textTransform:'uppercase', marginBottom:12 }}>
+              {planLabel}
+            </div>
+            <h1 style={{ fontFamily:'var(--font-playfair),Georgia,serif', fontSize:'clamp(26px,4vw,38px)', fontWeight:700, color:'#1B2D52', lineHeight:1.2, letterSpacing:'-0.02em', marginBottom:16 }}>
+              SA-AIRS™ AI Career Risk Assessment
+            </h1>
+            <p style={{ fontSize:15, color:'#46567A', lineHeight:1.7, marginBottom:28 }}>
+              This assessment models your AI displacement risk across 5 dimensions. It takes <strong>3–5 minutes</strong>. Answer honestly — this is a mirror, not a test. Your report will be delivered within 24–48 hours.
+            </p>
+            <div style={{ background:'#fff', borderRadius:12, padding:24, border:'1px solid #E0E5F0', marginBottom:32 }}>
+              <div style={{ fontWeight:700, fontSize:14, color:'#1B2D52', marginBottom:16 }}>How scoring works</div>
+              <div style={{ display:'grid', gap:8 }}>
+                {[['1–2','Never / Strongly Disagree — barely applies to your work'],
+                  ['3–4','Rarely — comes up occasionally, not the norm'],
+                  ['5–6','Sometimes — roughly half the time'],
+                  ['7–8','Often / Mostly — describes most of your work'],
+                  ['9–10','Always / Strongly Agree — central to what you do every day'],
+                ].map(([score, meaning]) => (
+                  <div key={score} style={{ display:'flex', gap:14, alignItems:'flex-start' }}>
+                    <div style={{ minWidth:36, fontWeight:700, fontSize:13, color:'#2D5BE3' }}>{score}</div>
+                    <div style={{ fontSize:13, color:'#46567A' }}>{meaning}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <button onClick={() => setStep(1)} style={{
+              background:'#1B2D52', color:'#fff', border:'none', borderRadius:10,
+              padding:'16px 32px', fontSize:15, fontWeight:700, cursor:'pointer', letterSpacing:'0.01em',
+            }}>
+              Begin Assessment →
             </button>
-          ))}
-        </div>
+          </div>
+        )}
 
-        {current > 0 && (
-          <button
-            onClick={() => setCurrent(current - 1)}
-            className="mt-6 text-slate text-sm hover:text-navy transition-colors"
-          >
-            ← Back
-          </button>
+        {/* ── STEP 1: ABOUT YOU ──────────────────────────────────────────── */}
+        {step === 1 && (
+          <Section title="About You" subtitle="This shapes the language of your report. All fields marked * are required.">
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+              <Field label="Full Name *" value={fd.full_name} onChange={v=>set('full_name',v)} placeholder="Jane Smith" />
+              <Field label="Role / Job Title *" value={fd.role_title} onChange={v=>set('role_title',v)} placeholder="Senior Product Manager" />
+              <Field label="Company / Organisation *" value={fd.company} onChange={v=>set('company',v)} placeholder="Acme Corp" />
+              <Field label="Industry / Domain *" value={fd.industry} onChange={v=>set('industry',v)} placeholder="Fintech, Healthcare, SaaS…" />
+              <Field label="Location" value={fd.location} onChange={v=>set('location',v)} placeholder="Mumbai, India" />
+            </div>
+
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginTop:4 }}>
+              <div>
+                <label style={labelStyle}>Role Category *</label>
+                <select value={fd.role_category} onChange={e=>set('role_category',e.target.value)} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {ROLE_CATEGORIES.map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Years of Experience *</label>
+                <select value={fd.years_experience} onChange={e=>set('years_experience',e.target.value)} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {EXP_OPTIONS.map(o=><option key={o}>{o}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Company Type *</label>
+                <select value={fd.company_type} onChange={e=>set('company_type',e.target.value)} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {COMPANY_TYPES.map(t=><option key={t}>{t}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginTop:4 }}>
+              <label style={labelStyle}>Core Responsibilities <span style={{ fontWeight:400, color:'#7080A0' }}>(brief)</span></label>
+              <textarea value={fd.core_responsibilities} onChange={e=>set('core_responsibilities',e.target.value)}
+                style={taStyle} placeholder="What do you actually do day-to-day?" />
+            </div>
+          </Section>
+        )}
+
+        {/* ── STEP 2: DIMENSION 1 ────────────────────────────────────────── */}
+        {step === 2 && (
+          <DimSection
+            icon="↺" num={1} name="Task Repetition Level" weight="25%"
+            insight="If most of your work can be written as a step-by-step process, it likely scores 7+. Repetition is the #1 driver of automation risk."
+            anchors={['1–2: Every task is unique, no two days alike','5–6: Some patterns, but work requires regular adaptation','9–10: Highly repetitive — same steps, same output, same problems daily']}
+            questions={[
+              { key:'d1_q1', text:'My daily tasks follow the same pattern most days', anchor:'1–3: Rarely / Never · 4–6: Sometimes · 7–10: Often / Always' },
+              { key:'d1_q2', text:'I could write a checklist that covers 80%+ of my work', anchor:'1–3: Rarely / Never · 4–6: Sometimes · 7–10: Often / Always' },
+              { key:'d1_q3', text:'I rarely encounter problems I haven\'t solved before', anchor:'1–3: Rarely / Never · 4–6: Sometimes · 7–10: Often / Always' },
+            ]}
+            evidenceKey="d1_evidence" evidenceHint="Describe the most repetitive task you do every week"
+            calibrationKey="d1_calibration" calibrationHint="Roughly how many times do you perform the exact same task type per week?"
+            fd={fd} set={set}
+          />
+        )}
+
+        {/* ── STEP 3: DIMENSION 2 ────────────────────────────────────────── */}
+        {step === 3 && (
+          <DimSection
+            icon="⚡" num={2} name="Automation Feasibility" weight="25%"
+            insight="If someone could give ChatGPT your job description and get a usable output — that's high automation feasibility."
+            anchors={['1–2: My output is uniquely human — requires judgment and nuance every time','5–6: AI can assist but not fully replace — I still add significant value','9–10: AI tools can already produce most of my output with a good prompt']}
+            questions={[
+              { key:'d2_q1', text:'My work output is primarily text, data, or structured code', anchor:'1–3: Rarely / Never · 4–6: Sometimes · 7–10: Often / Always' },
+              { key:'d2_q2', text:'Most of what I produce could be described in a clear, repeatable prompt', anchor:'1–3: Rarely / Never · 4–6: Sometimes · 7–10: Often / Always' },
+              { key:'d2_q3', text:'AI tools can already perform significant parts of my job today', anchor:'1–3: Rarely / Never · 4–6: Sometimes · 7–10: Often / Always' },
+            ]}
+            evidenceKey="d2_evidence" evidenceHint="Name one specific deliverable from your role that AI could produce right now"
+            calibrationKey="d2_calibration" calibrationHint="Could someone use ChatGPT or Copilot to replace 50%+ of your daily output?"
+            fd={fd} set={set}
+          />
+        )}
+
+        {/* ── STEP 4: DIMENSION 3 ────────────────────────────────────────── */}
+        {step === 4 && (
+          <DimSection
+            icon="◎" num={3} name="Market Saturation" weight="20%"
+            insight="High saturation + high automation = double exposure. This combination is the fastest-declining profile in the SA-AIRS dataset."
+            anchors={['1–2: Rare, niche skill — few people globally do what I do','5–6: Common role but specific enough that I have real differentiation','9–10: Millions globally — interchangeable, no meaningful differentiation']}
+            questions={[
+              { key:'d3_q1', text:'My job title is extremely common on job platforms and LinkedIn', anchor:'1–3: Rarely / Never · 4–6: Sometimes · 7–10: Often / Always' },
+              { key:'d3_q2', text:'My core skills are taught in most universities or bootcamps globally', anchor:'1–3: Rarely / Never · 4–6: Sometimes · 7–10: Often / Always' },
+              { key:'d3_q3', text:'A company could hire my replacement within 2 weeks if needed', anchor:'1–3: Rarely / Never · 4–6: Sometimes · 7–10: Often / Always' },
+            ]}
+            evidenceKey="d3_evidence" evidenceHint="Estimate how many people share your exact job title on LinkedIn"
+            calibrationKey="d3_calibration" calibrationHint="What specifically differentiates you from 100 other people with your job title?"
+            fd={fd} set={set}
+          />
+        )}
+
+        {/* ── STEP 5: DIMENSION 4 ────────────────────────────────────────── */}
+        {step === 5 && (
+          <DimSection
+            icon="⬡" num={4} name="Decision Complexity" weight="15%" protective
+            insight="Decision complexity is your shield. AI can process information fast — but it cannot yet carry accountability for ambiguous, high-stakes calls."
+            anchors={['1–2: Clear rules and processes guide every decision','5–6: Mix of structured decisions and genuine judgment calls','9–10: Most decisions involve real ambiguity, high stakes, and no clear right answer']}
+            questions={[
+              { key:'d4_q1', text:'My work regularly involves navigating ambiguous, high-stakes situations', anchor:'1–3: Rarely (low protection) · 4–6: Moderate · 7–10: Strongly present (high protection)' },
+              { key:'d4_q2', text:'I make critical decisions with incomplete or conflicting information', anchor:'1–3: Rarely (low protection) · 4–6: Moderate · 7–10: Strongly present (high protection)' },
+              { key:'d4_q3', text:'My judgment calls carry significant consequences if they are wrong', anchor:'1–3: Rarely (low protection) · 4–6: Moderate · 7–10: Strongly present (high protection)' },
+            ]}
+            evidenceKey="d4_evidence" evidenceHint="Describe one recent decision that required real judgment — not just process-following"
+            calibrationKey="d4_calibration" calibrationHint="How often does a senior person override or question your decisions?"
+            fd={fd} set={set}
+          />
+        )}
+
+        {/* ── STEP 6: DIMENSION 5 ────────────────────────────────────────── */}
+        {step === 6 && (
+          <DimSection
+            icon="◈" num={5} name="Human Context Dependency" weight="15%" protective
+            insight="Human context dependency is the hardest thing for AI to replicate. If your output quality depends on who you're dealing with and how you read them — that's a real moat."
+            anchors={['1–2: Work is entirely independent — no human dynamics involved','5–6: Some relationship-building matters, but it\'s not central','9–10: Reading people, navigating politics, and building trust is core to everything']}
+            questions={[
+              { key:'d5_q1', text:'I need to read unspoken dynamics and organisational politics to do my job', anchor:'1–3: Rarely (low protection) · 4–6: Moderate · 7–10: Strongly present (high protection)' },
+              { key:'d5_q2', text:'Building trust and relationships is central to the quality of my work output', anchor:'1–3: Rarely (low protection) · 4–6: Moderate · 7–10: Strongly present (high protection)' },
+              { key:'d5_q3', text:'I regularly adapt my entire approach based on individual personalities', anchor:'1–3: Rarely (low protection) · 4–6: Moderate · 7–10: Strongly present (high protection)' },
+            ]}
+            evidenceKey="d5_evidence" evidenceHint="Give one example where reading a person or situation directly changed your outcome"
+            calibrationKey="d5_calibration" calibrationHint="Could an outsider with your technical skills do your job effectively in their first month?"
+            fd={fd} set={set}
+          />
+        )}
+
+        {/* ── STEP 7: SUCCESS ───────────────────────────────────────────── */}
+        {step === 7 && (
+          <div style={{ textAlign:'center', padding:'32px 0' }}>
+            <div style={{ fontSize:48, marginBottom:24 }}>✓</div>
+            <h1 style={{ fontFamily:'var(--font-playfair),Georgia,serif', fontSize:'clamp(24px,4vw,34px)', fontWeight:700, color:'#1B2D52', lineHeight:1.2, marginBottom:16 }}>
+              Assessment submitted successfully
+            </h1>
+            <p style={{ fontSize:15, color:'#46567A', lineHeight:1.7, maxWidth:480, margin:'0 auto 32px' }}>
+              Thank you, {fd.full_name.split(' ')[0]}. Your SA-AIRS™ report will be delivered within <strong>24–48 hours</strong> via email or DM — look out for it from Sriram Advisory.
+            </p>
+            <div style={{ background:'#F0F3FA', borderRadius:10, padding:'16px 24px', maxWidth:400, margin:'0 auto 32px', fontSize:13, color:'#46567A' }}>
+              Reference ID: <code style={{ color:'#1B2D52', fontWeight:700 }}>{submitId.slice(0,8).toUpperCase()}</code>
+            </div>
+            <a href="/" style={{ display:'inline-block', background:'#1B2D52', color:'#fff', borderRadius:10, padding:'14px 28px', fontSize:14, fontWeight:700, textDecoration:'none' }}>
+              Back to Home
+            </a>
+          </div>
+        )}
+
+        {/* ── NAVIGATION ───────────────────────────────────────────────── */}
+        {step > 0 && step < 7 && (
+          <div style={{ marginTop:40, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16 }}>
+            <button onClick={()=>setStep(s=>s-1)} style={{
+              background:'none', border:'1.5px solid #D4D9E8', color:'#46567A',
+              borderRadius:10, padding:'13px 24px', fontSize:14, fontWeight:600, cursor:'pointer',
+            }}>
+              ← Back
+            </button>
+            <div style={{ fontSize:13, color:'#7080A0' }}>Step {step} of 6</div>
+            {step < 6 ? (
+              <button onClick={()=>{ if(canProceed()) setStep(s=>s+1); }}
+                disabled={!canProceed()}
+                style={{
+                  background: canProceed() ? '#1B2D52' : '#C8D0E0',
+                  color:'#fff', border:'none', borderRadius:10,
+                  padding:'13px 28px', fontSize:14, fontWeight:700,
+                  cursor: canProceed() ? 'pointer' : 'not-allowed',
+                }}>
+                Next →
+              </button>
+            ) : (
+              <button onClick={handleSubmit} disabled={submitting || !canProceed()} style={{
+                background: canProceed() && !submitting ? '#2DB887' : '#C8D0E0',
+                color:'#fff', border:'none', borderRadius:10,
+                padding:'13px 28px', fontSize:14, fontWeight:700,
+                cursor: canProceed() && !submitting ? 'pointer' : 'not-allowed',
+              }}>
+                {submitting ? 'Submitting…' : 'Submit Assessment →'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {error && (
+          <div style={{ marginTop:16, padding:'12px 16px', background:'#FEE', borderRadius:8, fontSize:13, color:'#B00020' }}>{error}</div>
         )}
       </div>
-    </section>
+    </div>
+  );
+}
+
+// ─── Reusable Section wrapper ─────────────────────────────────────────────────
+
+function Section({ title, subtitle, children }: { title:string; subtitle:string; children:React.ReactNode }) {
+  return (
+    <div>
+      <h2 style={{ fontFamily:'var(--font-playfair),Georgia,serif', fontSize:'clamp(22px,3vw,30px)', fontWeight:700, color:'#1B2D52', lineHeight:1.2, letterSpacing:'-0.02em', marginBottom:8 }}>{title}</h2>
+      <p style={{ fontSize:14, color:'#7080A0', marginBottom:32 }}>{subtitle}</p>
+      <div style={{ display:'flex', flexDirection:'column', gap:18 }}>{children}</div>
+    </div>
+  );
+}
+
+// ─── Field helper ─────────────────────────────────────────────────────────────
+
+function Field({ label, value, onChange, placeholder }: { label:string; value:string; onChange:(v:string)=>void; placeholder?:string }) {
+  return (
+    <div>
+      <label style={labelStyle}>{label}</label>
+      <input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={inputStyle} />
+    </div>
+  );
+}
+
+// ─── Dimension section ────────────────────────────────────────────────────────
+
+function DimSection({ icon, num, name, weight, protective, insight, anchors, questions, evidenceKey, evidenceHint, calibrationKey, calibrationHint, fd, set }: {
+  icon:string; num:number; name:string; weight:string; protective?:boolean;
+  insight:string; anchors:string[];
+  questions:{ key:string; text:string; anchor:string }[];
+  evidenceKey:string; evidenceHint:string;
+  calibrationKey:string; calibrationHint:string;
+  fd:FormData; set:(k:keyof FormData,v:string|number)=>void;
+}) {
+  return (
+    <div>
+      <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
+        <span style={{ fontSize:20 }}>{icon}</span>
+        <span style={{ fontSize:12, fontWeight:700, letterSpacing:'0.1em', color: protective ? '#2DB887' : '#2D5BE3', textTransform:'uppercase' }}>
+          Dimension {num} — {name} · Weight {weight}
+          {protective && ' · ★ Protective'}
+        </span>
+      </div>
+      {protective && (
+        <div style={{ background:'#EDFAF5', border:'1px solid #2DB887', borderRadius:8, padding:'10px 14px', marginBottom:16, fontSize:13, color:'#0A6B55' }}>
+          <strong>★ Protective Dimension</strong> — A HIGH score here reduces your AI risk. This is a strength to actively build.
+        </div>
+      )}
+      <h2 style={{ fontFamily:'var(--font-playfair),Georgia,serif', fontSize:'clamp(20px,3vw,26px)', fontWeight:700, color:'#1B2D52', lineHeight:1.2, letterSpacing:'-0.02em', marginBottom:16 }}>{name}</h2>
+
+      {/* Anchors */}
+      <div style={{ background:'#F7F8FC', borderRadius:10, padding:'14px 18px', marginBottom:28, display:'flex', flexDirection:'column', gap:6 }}>
+        {anchors.map((a,i) => (
+          <div key={i} style={{ fontSize:13, color:'#46567A', display:'flex', gap:10 }}>
+            <span style={{ color:'#2D5BE3', flexShrink:0 }}>→</span>{a}
+          </div>
+        ))}
+      </div>
+
+      {/* Insight callout */}
+      <div style={{ background:'#FFF8E8', border:'1px solid #F5A623', borderRadius:8, padding:'10px 14px', marginBottom:28, fontSize:13, color:'#7A5000', lineHeight:1.6 }}>
+        <strong>Insight:</strong> {insight}
+      </div>
+
+      {/* Questions */}
+      <div style={{ display:'flex', flexDirection:'column', gap:28 }}>
+        {questions.map((q, qi) => (
+          <div key={q.key}>
+            <label style={{ ...labelStyle, fontWeight:400, fontSize:14, marginBottom:12 }}>
+              <strong>Q{qi+1}.</strong> {q.text}
+            </label>
+            <ScoreSelector
+              value={fd[q.key as keyof FormData] as number}
+              onChange={v => set(q.key as keyof FormData, v)}
+              anchor={q.anchor}
+            />
+          </div>
+        ))}
+
+        {/* Evidence */}
+        <div>
+          <label style={labelStyle}>Evidence <span style={{ fontWeight:400, color:'#7080A0' }}>(optional but improves your report)</span></label>
+          <textarea
+            value={fd[evidenceKey as keyof FormData] as string}
+            onChange={e => set(evidenceKey as keyof FormData, e.target.value)}
+            style={taStyle} placeholder={evidenceHint}
+          />
+          <div style={hintStyle}>{evidenceHint}</div>
+        </div>
+
+        {/* Calibration */}
+        <div>
+          <label style={labelStyle}>Calibration <span style={{ fontWeight:400, color:'#7080A0' }}>(helps us validate your scores)</span></label>
+          <textarea
+            value={fd[calibrationKey as keyof FormData] as string}
+            onChange={e => set(calibrationKey as keyof FormData, e.target.value)}
+            style={taStyle} placeholder={calibrationHint}
+          />
+          <div style={hintStyle}>{calibrationHint}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Page export (wrapped in Suspense for useSearchParams) ────────────────────
+
+export default function AssessmentPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'sans-serif', color:'#7080A0' }}>Loading…</div>}>
+      <AssessmentInner />
+    </Suspense>
   );
 }

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { Playfair_Display, DM_Sans } from "next/font/google";
+import { Playfair_Display, DM_Sans, Plus_Jakarta_Sans, Lora, JetBrains_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -16,13 +15,33 @@ const dmSans = DM_Sans({
   weight: ["300", "400", "500", "600", "700"],
 });
 
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+});
+
+const lora = Lora({
+  variable: "--font-lora",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+});
+
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+});
+
 export const metadata: Metadata = {
-  title: "Sriram Advisory — Navigate the AI Era. On Your Terms.",
+  title: "SA-AIRS™ — AI Career Intelligence System | Sriram Advisory",
   description:
-    "Sriram Advisory helps students and mid-career professionals understand what AI means for their work and build a confident path forward.",
+    "SA-AIRS™ models your AI displacement risk across 5 dimensions. Get your scored, explainable AI Career Risk report with a 90-day action roadmap.",
   openGraph: {
-    title: "Sriram Advisory",
-    description: "Navigate the AI Era. On Your Terms.",
+    title: "SA-AIRS™ — AI Career Intelligence System",
+    description: "Know your AI displacement risk. Get a 90-day roadmap.",
     type: "website",
   },
 };
@@ -35,12 +54,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${playfair.variable} ${dmSans.variable} h-full antialiased`}
+      className={`${playfair.variable} ${dmSans.variable} ${jakarta.variable} ${lora.variable} ${jetbrains.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-cream text-navy">
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+      <body className="min-h-full flex flex-col">
+        {children}
+        <Analytics />
       </body>
     </html>
   );
